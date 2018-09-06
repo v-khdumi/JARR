@@ -8,11 +8,11 @@ from tests.base import JarrFlaskCommon
 
 from jarr.bootstrap import conf
 from jarr.controllers import FeedController, UserController, ClusterController
-from jarr_crawler.http_crawler import (main as crawler, response_etag_match,
+from jarr.crawler.http_crawler import (main as crawler, response_etag_match,
                                        response_calculated_etag_match,
                                        set_feed_error, clean_feed)
-from jarr_common.utils import to_hash
-from jarr_common.const import UNIX_START
+from jarr.lib.utils import to_hash
+from jarr.lib.const import UNIX_START
 
 logger = logging.getLogger('jarr')
 BASE_COUNT = 36
@@ -31,12 +31,11 @@ class CrawlerTest(JarrFlaskCommon):
             self._content = fd.read()
         self.new_entries_cnt = len(feedparser.parse(self._content)['entries'])
         self.new_entries_cnt *= FeedController().read().count()
-        self.wait_params = {'wait_for': 1, 'max_wait': 10, 'checks': 1}
         UserController().update({'login': 'admin'}, {'is_api': True})
         self._is_secure_served \
                 = patch('jarr.lib.article_cleaner.is_secure_served')
-        self._p_req = patch('jarr_crawler.requests_utils.requests.api.request')
-        self._p_con = patch('jarr_crawler.http_crawler.construct_feed_from')
+        self._p_req = patch('jarr.crawler.requests_utils.requests.api.request')
+        self._p_con = patch('jarr.crawler.http_crawler.construct_feed_from')
         self.is_secure_served = self._is_secure_served.start()
         self.jarr_req = self._p_req.start()
         self.jarr_con = self._p_con.start()
@@ -195,7 +194,7 @@ class CrawlerMethodsTest(unittest.TestCase):
         self.assertTrue(response_etag_match(self.feed, self.resp))
         self.assertFalse(response_calculated_etag_match(self.feed, self.resp))
 
-    @patch('jarr_crawler.http_crawler.query_jarr')
+    @patch('jarr.crawler.http_crawler.query_jarr')
     def test_set_feed_error_w_error(self, query_jarr):
         original_error_count = self.feed['error_count']
         set_feed_error(self.feed, self.pool, Exception('an error'))
@@ -206,7 +205,7 @@ class CrawlerMethodsTest(unittest.TestCase):
         self.assertEqual(original_error_count + 1, data['error_count'])
         self.assertEqual('an error', data['last_error'])
 
-    @patch('jarr_crawler.http_crawler.query_jarr')
+    @patch('jarr.crawler.http_crawler.query_jarr')
     def test_set_feed_error_w_parsed(self, query_jarr):
         original_error_count = self.feed['error_count']
         set_feed_error(self.feed, self.pool,
@@ -217,7 +216,7 @@ class CrawlerMethodsTest(unittest.TestCase):
         self.assertEqual(original_error_count + 1, data['error_count'])
         self.assertEqual('an error', data['last_error'])
 
-    @patch('jarr_crawler.http_crawler.query_jarr')
+    @patch('jarr.crawler.http_crawler.query_jarr')
     def test_clean_feed(self, query_jarr):
         clean_feed(self.feed, self.pool, self.resp)
         method, urn, data = get_first_call(query_jarr)
@@ -230,7 +229,7 @@ class CrawlerMethodsTest(unittest.TestCase):
         self.assertTrue('site_link' not in data)
         self.assertTrue('icon_url' not in data)
 
-    @patch('jarr_crawler.http_crawler.query_jarr')
+    @patch('jarr.crawler.http_crawler.query_jarr')
     def test_clean_feed_update_link(self, query_jarr):
         self.resp.history.append(Mock(status_code=301))
         self.resp.url = 'new_link'
@@ -245,8 +244,8 @@ class CrawlerMethodsTest(unittest.TestCase):
         self.assertTrue('site_link' not in data)
         self.assertTrue('icon_url' not in data)
 
-    @patch('jarr_crawler.http_crawler.construct_feed_from')
-    @patch('jarr_crawler.http_crawler.query_jarr')
+    @patch('jarr.crawler.http_crawler.construct_feed_from')
+    @patch('jarr.crawler.http_crawler.query_jarr')
     def test_clean_feed_w_constructed(self, query_jarr, construct_feed_mock):
         construct_feed_mock.return_value = {'description': 'new description'}
         clean_feed(self.feed, self.pool, self.resp, True)

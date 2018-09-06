@@ -5,7 +5,7 @@ from sqlalchemy import and_
 from sqlalchemy.sql import delete, select, update
 from werkzeug.exceptions import Forbidden
 
-from jarr_common.utils import utc_now
+from jarr.lib.utils import utc_now
 
 from jarr.bootstrap import conf, session
 from jarr.controllers.abstract import AbstractController

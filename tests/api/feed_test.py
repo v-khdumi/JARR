@@ -1,7 +1,7 @@
 from tests.base import JarrFlaskCommon
 from datetime import timezone, timedelta
 from mock import patch
-from jarr_common.utils import utc_now
+from jarr.lib.utils import utc_now
 from jarr.controllers import FeedController
 
 

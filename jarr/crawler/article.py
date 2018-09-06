@@ -6,9 +6,9 @@ from urllib.parse import SplitResult, urlsplit, urlunsplit
 import dateutil.parser
 from requests.exceptions import MissingSchema
 
-from jarr_common.filter import process_filters, FiltersAction
-from jarr_common.html_parsing import extract_tags, extract_title, extract_lang
-from jarr_common.utils import jarr_get, utc_now
+from jarr.lib.filter import process_filters, FiltersAction
+from jarr.lib.html_parsing import extract_tags, extract_title, extract_lang
+from jarr.lib.utils import jarr_get, utc_now
 from jarr.lib.article_cleaner import clean_urls
 
 logger = logging.getLogger(__name__)
@@ -68,6 +68,7 @@ def construct_article(entry, feed, user_agent,
         if 'content' in article and details.get('link'):
             push_in_article('content',
                             clean_urls, article['content'], details['link'])
+    push_in_article('valuable_tokens', extract_valuable_tokens, article)
     return article
 
 

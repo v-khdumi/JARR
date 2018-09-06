@@ -33,11 +33,9 @@ before_script:
   - echo '{"jarr_testing":true,"crawler":{"login":"admin","passwd":"admin"},"log":{"level":10},"sqlalchemy":{"test_uri":"postgresql:///jarr_test"}}' > ~/.config/jarr.test.json
 
 script:
-  - CONFIG_FILE=~/.config/jarr.test.json pipenv run nosetests tests/ -v --with-coverage --cover-package=jarr,jarr_common,jarr_crawler
+  - CONFIG_FILE=~/.config/jarr.test.json pipenv run nosetests tests/ -v --with-coverage --cover-package=jarr
   # ignoring aligning / line breaking non-sens
   - pycodestyle --ignore=E126,E127,E128,W503 jarr/ --exclude=jarr/migrations
-  - pycodestyle --ignore=E126,E127,E128,W503 jarr_crawler/
-  - pycodestyle --ignore=E126,E127,E128,W503 jarr_common/
 
 after_success:
   - coveralls

@@ -5,7 +5,7 @@ from sqlalchemy import func, cast
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from werkzeug.exceptions import Unauthorized, Forbidden
 
-from jarr_common.utils import utc_now
+from jarr.lib.utils import utc_now
 
 from jarr.bootstrap import session
 from jarr.controllers import CategoryController, FeedController

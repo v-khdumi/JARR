@@ -77,8 +77,7 @@ def init_logging(log_path=None, log_level=logging.INFO, modules=(),
                  log_format='%(asctime)s %(levelname)s %(message)s'):
 
     if not modules:
-        modules = ('root', 'wsgi', 'manager',
-                   'jarr', 'jarr_crawler', 'jarr_common')
+        modules = 'root', 'wsgi', 'manager', 'jarr'
     if log_path:
         handler = logging.FileHandler(log_path)
     else:

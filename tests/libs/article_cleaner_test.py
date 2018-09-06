@@ -5,8 +5,7 @@ from mock import patch
 from requests import Response
 from requests.exceptions import MissingSchema
 
-from jarr import bootstrap
-from jarr_crawler.article import construct_article
+from jarr.crawler.article import construct_article
 
 
 class ConstructArticleTest(unittest.TestCase):
@@ -14,7 +13,7 @@ class ConstructArticleTest(unittest.TestCase):
                    'les-plus-belles-boulangeries-de-paris'
 
     def setUp(self):
-        self._jarr_get_patch = patch('jarr_crawler.article.jarr_get')
+        self._jarr_get_patch = patch('jarr.crawler.article.jarr_get')
         self.jarr_get_patch = self._jarr_get_patch.start()
 
     def tearDown(self):

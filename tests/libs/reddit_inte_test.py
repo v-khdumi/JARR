@@ -1,6 +1,6 @@
 import unittest
 from jarr.signals import feed_creation
-from jarr_crawler.signals import entry_parsing
+from jarr.crawler.signals import entry_parsing
 
 CONTENT = """<table><tr><td>
 <a href="https://www.reddit.com/r/Map_Porn/comments/5mxq4o/\

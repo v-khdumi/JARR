@@ -1,6 +1,6 @@
 import unittest
 
-from jarr_common.feed_utils import construct_feed_from
+from jarr.lib.feed_utils import construct_feed_from
 from jarr.bootstrap import conf
 
 cff_kw = {'timeout': conf.crawler.timeout,
