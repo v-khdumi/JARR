@@ -1,0 +1,11 @@
+version: '3'
+services:
+  web:
+    build: containers/server
+    ports: 5000:5000
+  crawler:
+    build: containers/crawler
+  redis:
+    image: 'redis:alpine'
+  postgresql:
+    image: 'postgres:10.5-alpine'

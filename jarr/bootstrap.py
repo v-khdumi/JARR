@@ -24,15 +24,29 @@ conf = TheConf({'config_files': ['/etc/jarr.json', '~/.config/jarr.json'],
                 {'tfidf_min_score': {'default': .75, 'type': float}}]},
             {'timezone': {'default': 'Europe/Paris', 'type': str}},
             {'platform_url': {'default': 'http://0.0.0.0:5000/'}},
-            {'sqlalchemy': [{'db_uri': {}},
-                            {'test_uri': {'default': 'postgresql://jarr'}}]},
+            {'db': [{'pg_uri': {'default': 'postgresql://jarr'}},
+                    {'redis': [{'host': {'default': 'redis'}},
+                               {'db': {'default': 0, 'type': int}},
+                               {'port': {'default': 6379, 'type': int}},
+                               {'password': {'default': None}}]}]},
+            {'celery': [{'BROKER_URL': {
+                            'default': 'db+postgresql://jarr_broker'}},
+                        {'CELERY_RESULT_BACKEND': {
+                            'default': 'db+postgresql://jarr_broker'}},
+                        {'CELERY_TASK_SERIALIZER': {'default': 'json'}},
+                        {'CELERY_RESULT_SERIALIZER': {'default': 'json'}},
+                        {'CELERY_TASK_RESULT_EXPIRE': {'default': None}},
+                        {'CELERY_TIMEZONE': {'default': 'Europe/Paris'}},
+                        {'CELERY_ENABLE_UTC': {'default': True, 'type': bool}},
+                        {'CELERY_IMPORTS': {'default': 'ep_celery'}},
+                        {'CELERY_DEFAULT_QUEUE': {'default': 'jarr'}},
+                        {'CELERY_DEFAULT_EXCHANGE': {'default': 'jarr'}}]},
             {'secret_key': {'default': str(random.getrandbits(128))}},
             {'bundle_js': {'default': 'local'}},
             {'log': [{'level': {'default': logging.WARNING, 'type': int}},
                      {'path': {'default': "jarr.log"}}]},
             {'crawler': [{'login': {'default': 'admin'}},
                          {'passwd': {'default': 'admin'}},
-                         {'type': {'default': 'http'}},
                          {'resolv': {'type': bool, 'default': False}},
                          {'user_agent': {
                              'default': 'https://github.com/jaesivsm/JARR'}},
@@ -92,12 +106,9 @@ def init_logging(log_path=None, log_level=logging.INFO, modules=(),
         logger.setLevel(log_level)
 
 
-def init_db(echo=False):  # pragma: no cover
+def init_db(echo=False):
     kwargs = {'echo': echo}
-    if conf.jarr_testing:
-        new_engine = create_engine(conf.sqlalchemy.test_uri, **kwargs)
-    else:
-        new_engine = create_engine(conf.sqlalchemy.db_uri, **kwargs)
+    new_engine = create_engine(conf.db.pg_uri, **kwargs)
     NewBase = declarative_base(new_engine)
     SessionMaker = sessionmaker(bind=new_engine)
     new_session = scoped_session(SessionMaker)
