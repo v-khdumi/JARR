@@ -1,10 +1,15 @@
 version: '3'
 services:
   web:
-    build: containers/server
-    ports: 5000:5000
+    build:
+      dockerfile: containers/server/Dockerfile
+      context: .
+    ports:
+      - 5000:5000
   crawler:
-    build: containers/crawler
+    build:
+      dockerfile: containers/crawler/Dockerfile
+      context: .
   redis:
     image: 'redis:alpine'
   postgresql:

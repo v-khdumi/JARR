@@ -1,8 +1,8 @@
-FROM python:3.5-slim
+FROM python:3.6-slim
 
-COPY docker_files/logging.ini /etc/jarr_logging.ini
-COPY docker_files/gunicorn.py /etc/gunicorn.py
-ADD . /code
+COPY containers/server/docker_files/logging.ini /etc/jarr_logging.ini
+COPY containers/server/docker_files/gunicorn.py /etc/gunicorn.py
+COPY . /code
 WORKDIR /code
 # Installing python dependencies
 RUN pip install pipenv && pipenv sync && pip install gunicorn json-logging-py
