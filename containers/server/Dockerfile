@@ -5,7 +5,7 @@ COPY containers/server/docker_files/gunicorn.py /etc/gunicorn.py
 COPY . /code
 WORKDIR /code
 # Installing python dependencies
-RUN pip install pipenv && pipenv sync && pip install gunicorn json-logging-py
+RUN pip install pipenv && pipenv sync
 # Mount so your configuration is accessible from here
 VOLUME /etc/
 EXPOSE 8000

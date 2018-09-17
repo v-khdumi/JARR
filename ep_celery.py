@@ -3,5 +3,6 @@
 from celery import Celery
 from jarr.bootstrap import conf
 
-celery_app = Celery(broker=conf.celery.BROKER_URL,
+celery_app = Celery(broker=conf.celery.broker,
+        backend=conf.celery.backend,
         config_source=conf.celery)

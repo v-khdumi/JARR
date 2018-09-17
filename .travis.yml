@@ -30,7 +30,6 @@ install:
 
 before_script:
   - psql -c 'CREATE DATABASE jarr_test;' -U postgres
-  - psql -c 'CREATE DATABASE jarr_broker;' -U postgres
   - echo '{"jarr_testing":true,"log":{"level":10},"db":{"pg_uri":"postgresql:///jarr_test"}}' > ~/.config/jarr.test.json
 
 script:

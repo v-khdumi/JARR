@@ -1,16 +1,52 @@
 version: '3'
 services:
-  web:
+  server:
     build:
       dockerfile: containers/server/Dockerfile
       context: .
     ports:
-      - 5000:5000
+      - 8000:8000
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - redis
+      - postgresql
   crawler:
     build:
       dockerfile: containers/crawler/Dockerfile
       context: .
+    networks:
+      - backend
+    depends_on:
+      - redis
+      - postgresql
   redis:
-    image: 'redis:alpine'
+    image: redis:alpine
+    ports:
+      - "6379"
+    networks:
+      - backend
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
   postgresql:
-    image: 'postgres:10.5-alpine'
+    image: postgres:9.4
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - backend
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
+networks:
+  frontend:
+  backend:
+
+volumes:
+  db-data:
