@@ -1,5 +1,4 @@
 import logging
-from functools import partial
 
 import feedparser
 
@@ -27,7 +26,7 @@ def clean_feed(feed, response, parsed_feed=None, **info):
                  'last_retrieved': utc_now()})
 
     if parsed_feed is not None:  # updating feed with retrieved info
-        constructed = construct_feed_from(feed['link'], parsed_feed, feed,
+        constructed = construct_feed_from(feed.link, parsed_feed, feed,
                 timeout=conf.crawler.timeout,
                 user_agent=conf.crawler.user_agent)
         for key in 'description', 'site_link', 'icon_url':
@@ -35,12 +34,12 @@ def clean_feed(feed, response, parsed_feed=None, **info):
                 info[key] = constructed[key]
 
     info = {key: value for key, value in info.items()
-            if feed.get(key) != value}
+            if getattr(feed, key) != value}
 
     # updating link on permanent move /redirect
-    if response.history and feed['link'] != response.url and any(
+    if response.history and feed.link != response.url and any(
             resp.status_code in {301, 308} for resp in response.history):
-        logger.warning('feed moved from %r to %r', feed['link'], response.url)
+        logger.warning('feed moved from %r to %r', feed.link, response.url)
         info['link'] = response.url
 
     if info:
@@ -49,12 +48,12 @@ def clean_feed(feed, response, parsed_feed=None, **info):
 
 
 def set_feed_error(feed, error=None, parsed_feed=None):
-    error_count = feed['error_count'] + 1
+    error_count = feed.error_count + 1
     if error:
         last_error = str(error)
     elif parsed_feed:
         last_error = str(parsed_feed.get('bozo_exception', ''))
-    if feed['error_count'] > conf.feed.error_threshold:
+    if feed.error_count > conf.feed.error_threshold:
         level = logging.WARNING
     else:
         level = logging.DEBUG
@@ -62,19 +61,19 @@ def set_feed_error(feed, error=None, parsed_feed=None):
                'bumping error count to %r', error_count)
     logger.debug("last error details %r", last_error)
     info = {'error_count': error_count, 'last_error': last_error,
-            'user_id': feed['user_id'], 'last_retrieved': utc_now()}
+            'user_id': feed.user_id, 'last_retrieved': utc_now()}
     info.update(extract_feed_info({}))
     return FeedController().update({'id': feed.id}, info)
 
 
-def challenge(feed, response, **kwargs):
+def create_missing_article(feed, response, **kwargs):
     logger.info('cache validation failed, challenging entries')
     parsed = feedparser.parse(response.content.strip())
     if is_parsing_ok(parsed):
         clean_feed(feed, response, parsed, **kwargs)
     else:
         set_feed_error(feed, parsed_feed=parsed)
-        return None, None
+        return
 
     ids, entries, skipped_list = [], {}, []
     for entry in parsed['entries']:
@@ -92,7 +91,7 @@ def challenge(feed, response, **kwargs):
         ids.append(entry_ids)
     if not ids and skipped_list:
         logger.debug('nothing to add (skipped %r) %r', skipped_list, parsed)
-        return None, None
+        return
     logger.debug('found %d entries %r', len(ids), ids)
 
     article_created = False
@@ -103,9 +102,9 @@ def challenge(feed, response, **kwargs):
     for id_to_create in new_entries_ids:
         article_created = True
         new_article = construct_article(
-                all_entries[tuple(sorted(id_to_create.items()))], feed,
+                entries[tuple(sorted(id_to_create.items()))], feed,
                 user_agent=conf.crawler.user_agent,
-                resolv=conf.crawler.resolv))
+                resolv=conf.crawler.resolv)
         logger.info('creating %r for %r - %r', new_article.get('title'),
                     new_article.get('user_id'), id_to_create)
         actrl.create(new_article)
@@ -126,7 +125,7 @@ def process_feed(feed_id):
         resp.raise_for_status()
     except Exception as error:
         set_feed_error(feed, error=error)
-        continue
+        return
 
     # checking if cache was validated
     kwargs = {}
@@ -134,26 +133,26 @@ def process_feed(feed_id):
         logger.info('feed responded with 304')
         clean_feed(feed, resp,
                    cache_type=reasons.CacheReason.status_code_304)
-        continue
+        return
     elif resp.status_code == 226:
         logger.info('feed responded with 226')
         kwargs['cache_support_a_im'] = True
     elif response_etag_match(feed, resp):
         clean_feed(feed, resp, cache_type=reasons.CacheReason.etag)
-        continue
+        return
     elif response_calculated_etag_match(feed, resp):
         clean_feed(feed, resp, cache_type=reasons.CacheReason.etag_calculated)
-        continue
+        return
     else:
         logger.debug('etag mismatch %r != %r',
-                     resp.headers.get('etag'), feed.get('etag'))
+                     resp.headers.get('etag'), feed.etag)
 
-    result = challenge(feed, resp, **kwargs)
+    create_missing_article(feed, resp, **kwargs)
 
 
 @celery_app.task(name='crawler.clusterizer')
 def clusterizer():
-    ClusterController.clusterize_pending_article()
+    ClusterController.clusterize_pending_articles()
 
 
 @celery_app.task(name='crawler.scheduler')
@@ -162,7 +161,7 @@ def scheduler():
 
     if not feeds:
         logger.debug("No feed to fetch")
-        scheduler.apply_async(countdown=5 * 60)
+        scheduler.apply_async(countdown=conf.crawler.idle_delay)
         return
     logger.debug('%d to fetch', len(feeds))
     for feed in feeds:

@@ -44,6 +44,7 @@ conf = TheConf({'config_files': ['/etc/jarr.json', '~/.config/jarr.json'],
             {'log': [{'level': {'default': logging.WARNING, 'type': int}},
                      {'path': {'default': "jarr.log"}}]},
             {'crawler': [{'login': {'default': 'admin'}},
+                         {'idle_delay': {'default': 2 * 60, 'type': int}},
                          {'passwd': {'default': 'admin'}},
                          {'resolv': {'type': bool, 'default': False}},
                          {'user_agent': {

@@ -8,9 +8,9 @@ from tests.base import JarrFlaskCommon
 
 from jarr.bootstrap import conf
 from jarr.controllers import FeedController, UserController, ClusterController
-from jarr.crawler.http_crawler import (main as crawler, response_etag_match,
-                                       response_calculated_etag_match,
-                                       set_feed_error, clean_feed)
+from jarr.crawler.main import (clusterizer, process_feed,
+        response_etag_match, response_calculated_etag_match,
+        set_feed_error, clean_feed)
 from jarr.lib.utils import to_hash
 from jarr.lib.const import UNIX_START
 
@@ -18,9 +18,10 @@ logger = logging.getLogger('jarr')
 BASE_COUNT = 36
 
 
-def get_first_call(query_jarr):
-    method, urn, _, data = query_jarr.mock_calls[0][1]
-    return method, urn, data
+def crawler():
+    for feed in FeedController().list_fetchable():
+        process_feed.apply(args=[feed.id])
+    clusterizer.apply()
 
 
 class CrawlerTest(JarrFlaskCommon):
@@ -35,7 +36,7 @@ class CrawlerTest(JarrFlaskCommon):
         self._is_secure_served \
                 = patch('jarr.lib.article_cleaner.is_secure_served')
         self._p_req = patch('jarr.crawler.requests_utils.requests.api.request')
-        self._p_con = patch('jarr.crawler.http_crawler.construct_feed_from')
+        self._p_con = patch('jarr.crawler.main.construct_feed_from')
         self.is_secure_served = self._is_secure_served.start()
         self.jarr_req = self._p_req.start()
         self.jarr_con = self._p_con.start()
@@ -174,85 +175,85 @@ class CrawlerMethodsTest(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
-        self.feed = {'user_id': 1, 'id': 1, 'title': 'title',
-                     'description': 'description',
-                     'etag': '', 'error_count': 5, 'link': 'link'}
+        self.feed = FeedController().get(id=1)
         self.resp = Mock(text='text', headers={}, status_code=304, history=[])
-        self.pool = []
 
     def test_etag_matching_w_constructed_etag(self):
-        self.feed['etag'] = 'jarr/"%s"' % to_hash('text')
+        self.feed.etag = 'jarr/"%s"' % to_hash('text')
         self.assertFalse(response_etag_match(self.feed, self.resp))
         self.assertTrue(response_calculated_etag_match(self.feed, self.resp))
 
     def test_etag_no_matching_wo_etag(self):
+        self.feed.etag = ''
         self.assertFalse(response_etag_match(self.feed, self.resp))
         self.assertFalse(response_calculated_etag_match(self.feed, self.resp))
 
     def test_etag_matching(self):
-        self.resp.headers['etag'] = self.feed['etag'] = 'etag'
+        self.resp.headers['etag'] = self.feed.etag = 'etag'
         self.assertTrue(response_etag_match(self.feed, self.resp))
         self.assertFalse(response_calculated_etag_match(self.feed, self.resp))
 
-    @patch('jarr.crawler.http_crawler.query_jarr')
-    def test_set_feed_error_w_error(self, query_jarr):
-        original_error_count = self.feed['error_count']
-        set_feed_error(self.feed, self.pool, Exception('an error'))
-        method, urn, data = get_first_call(query_jarr)
+    @patch('jarr.crawler.main.FeedController.update')
+    def test_set_feed_error_w_error(self, fctrl_update):
+        original_error_count = self.feed.error_count
+        set_feed_error(self.feed, Exception('an error'))
 
-        self.assertEqual('put', method)
-        self.assertEqual('feed/%d' % self.feed['id'], urn)
+        fctrl_update.assert_called_once()
+        filters, data = fctrl_update.mock_calls[0][1]
+        self.assertEqual(filters['id'], self.feed.id)
         self.assertEqual(original_error_count + 1, data['error_count'])
         self.assertEqual('an error', data['last_error'])
 
-    @patch('jarr.crawler.http_crawler.query_jarr')
-    def test_set_feed_error_w_parsed(self, query_jarr):
-        original_error_count = self.feed['error_count']
-        set_feed_error(self.feed, self.pool,
+    @patch('jarr.crawler.main.FeedController.update')
+    def test_set_feed_error_w_parsed(self, fctrl_update):
+        original_error_count = self.feed.error_count
+
+        fctrl_update.assert_called_once()
+        filters, data = fctrl_update.mock_calls[0][1]
+        set_feed_error(self.feed,
                        parsed_feed={'bozo_exception': 'an error'})
-        method, urn, data = get_first_call(query_jarr)
-        self.assertEqual('put', method)
-        self.assertEqual('feed/%d' % self.feed['id'], urn)
+        self.assertEqual(filters['id'], self.feed.id)
         self.assertEqual(original_error_count + 1, data['error_count'])
         self.assertEqual('an error', data['last_error'])
 
-    @patch('jarr.crawler.http_crawler.query_jarr')
-    def test_clean_feed(self, query_jarr):
-        clean_feed(self.feed, self.pool, self.resp)
-        method, urn, data = get_first_call(query_jarr)
+    @patch('jarr.crawler.main.FeedController.update')
+    def test_clean_feed(self, fctrl_update):
+        clean_feed(self.feed, self.resp)
+        fctrl_update.assert_called_once()
+        filters, data = fctrl_update.mock_calls[0][1]
 
-        self.assertEqual('put', method)
-        self.assertEqual('feed/%d' % self.feed['id'], urn)
+        self.assertEqual(filters['id'], self.feed.id)
         self.assertTrue('link' not in data)
         self.assertTrue('title' not in data)
         self.assertTrue('description' not in data)
         self.assertTrue('site_link' not in data)
         self.assertTrue('icon_url' not in data)
 
-    @patch('jarr.crawler.http_crawler.query_jarr')
-    def test_clean_feed_update_link(self, query_jarr):
+    @patch('jarr.crawler.main.FeedController.update')
+    def test_clean_feed_update_link(self, fctrl_update):
         self.resp.history.append(Mock(status_code=301))
         self.resp.url = 'new_link'
-        clean_feed(self.feed, self.pool, self.resp)
-        method, urn, data = get_first_call(query_jarr)
+        clean_feed(self.feed, self.resp)
 
-        self.assertEqual('put', method)
-        self.assertEqual('feed/%d' % self.feed['id'], urn)
+        fctrl_update.assert_called_once()
+        filters, data = fctrl_update.mock_calls[0][1]
+        self.assertEqual(filters['id'], self.feed.id)
         self.assertEqual('new_link', data['link'])
         self.assertTrue('title' not in data)
         self.assertTrue('description' not in data)
         self.assertTrue('site_link' not in data)
         self.assertTrue('icon_url' not in data)
 
-    @patch('jarr.crawler.http_crawler.construct_feed_from')
-    @patch('jarr.crawler.http_crawler.query_jarr')
-    def test_clean_feed_w_constructed(self, query_jarr, construct_feed_mock):
+    @patch('jarr.crawler.main.construct_feed_from')
+    @patch('jarr.crawler.main.FeedController.update')
+    def test_clean_feed_w_constructed(self, fctrl_update, construct_feed_mock):
         construct_feed_mock.return_value = {'description': 'new description'}
-        clean_feed(self.feed, self.pool, self.resp, True)
-        method, urn, data = get_first_call(query_jarr)
+        clean_feed(self.feed, self.resp, True)
 
-        self.assertEqual('put', method)
-        self.assertEqual('feed/%d' % self.feed['id'], urn)
+        fctrl_update.assert_called_once()
+        filters, data = fctrl_update.mock_calls[0][1]
+        self.assertEqual(filters['id'], self.feed.id)
+
         self.assertEqual('new description', data['description'])
         self.assertTrue('link' not in data)
         self.assertTrue('title' not in data)

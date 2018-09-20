@@ -7,17 +7,17 @@ logger = logging.getLogger(__name__)
 
 
 def response_etag_match(feed, resp):
-    if feed.get('etag') and resp.headers.get('etag'):
-        if feed['etag'].startswith('jarr/'):
+    if feed.etag and resp.headers.get('etag'):
+        if feed.etag.startswith('jarr/'):
             return False  # it's a jarr generated etag
-        if resp.headers['etag'] == feed['etag']:
+        if resp.headers['etag'] == feed.etag:
             logger.info("feed responded with same etag (%d)", resp.status_code)
             return True
     return False
 
 
 def response_calculated_etag_match(feed, resp):
-    if ('jarr/"%s"' % to_hash(resp.text)) == feed.get('etag'):
+    if ('jarr/"%s"' % to_hash(resp.text)) == feed.etag:
         logger.info("calculated hash matches (%d)", resp.status_code)
         return True
     return False
