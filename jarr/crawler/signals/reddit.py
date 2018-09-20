@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 @entry_parsing.connect
 def reddit_integration(sender, feed, entry):
-    is_reddit_feed = bool(feed.get('integration_reddit')
-                          and REDDIT_FEED.match(feed.get('link', '')))
+    is_reddit_feed = bool(feed.integration_reddit
+                          and REDDIT_FEED.match(feed.link))
     has_sufficient_data = bool(len(entry.get('content', []))
                                and entry['content'][0].get('value'))
     if not is_reddit_feed or not has_sufficient_data:

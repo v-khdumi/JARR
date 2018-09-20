@@ -73,12 +73,11 @@ def prepare_headers(feed):
     """For a known feed, will construct some header dictionnary"""
     headers = {'User-Agent': conf.crawler.user_agent,
                'Accept': FEED_ACCEPT_HEADERS}
-    if feed.get('last_modified'):
-        headers['If-Modified-Since'] = feed['last_modified']
-    if feed.get('etag') and 'jarr' not in feed['etag']:
-        headers['If-None-Match'] = feed['etag']
+    if feed.last_modified:
+        headers['If-Modified-Since'] = feed.last_modified
+    if feed.etag and 'jarr' not in feed.etag:
+        headers['If-None-Match'] = feed.etag
     if 'If-Modified-Since' in headers or 'If-None-Match' in headers:
         headers['A-IM'] = 'feed'
-    logger.debug('%r %r - calculated headers %r',
-                    feed['id'], feed['title'], headers)
+    logger.debug('%r %r - calculated headers %r', feed.id, feed.title, headers)
     return headers

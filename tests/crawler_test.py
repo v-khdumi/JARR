@@ -1,15 +1,13 @@
 import logging
 import unittest
 
-import feedparser
 from mock import Mock, patch
 
 from tests.base import JarrFlaskCommon
 
 from jarr.bootstrap import conf
 from jarr.models.feed import Feed
-from jarr.controllers import (ArticleController, FeedController,
-        UserController, ClusterController)
+from jarr.controllers import ArticleController, FeedController
 from jarr.crawler.main import (clusterizer, process_feed,
         response_etag_match, response_calculated_etag_match,
         set_feed_error, clean_feed)
@@ -32,12 +30,9 @@ class CrawlerTest(JarrFlaskCommon):
         super().setUp()
         with open('tests/fixtures/example.feed.atom') as fd:
             self._content = fd.read()
-        self.new_entries_cnt = len(feedparser.parse(self._content)['entries'])
-        self.new_entries_cnt *= FeedController().read().count()
-        UserController().update({'login': 'admin'}, {'is_api': True})
         self._is_secure_served \
                 = patch('jarr.lib.article_cleaner.is_secure_served')
-        self._p_req = patch('jarr.lib.utils.jarr_get')
+        self._p_req = patch('jarr.crawler.main.jarr_get')
         self._p_con = patch('jarr.crawler.main.construct_feed_from')
         self.is_secure_served = self._is_secure_served.start()
         self.jarr_req = self._p_req.start()
@@ -48,7 +43,7 @@ class CrawlerTest(JarrFlaskCommon):
         self.resp_headers = {}
         self.resp_raise = None
 
-        def _api_req(method, url, **kwargs):
+        def _api_req(url, **kwargs):
             if url.startswith('feed') and len(url) == 6:
                 resp = Mock(status_code=self.resp_status_code,
                             headers=self.resp_headers, history=[],
@@ -63,14 +58,12 @@ class CrawlerTest(JarrFlaskCommon):
             if 'auth' in kwargs:
                 kwargs['user'] = kwargs['auth'][0]
                 del kwargs['auth']
-            response = self._api(method.lower(), url, **kwargs)
+            response = self._api('get', url, **kwargs)
             response.raise_for_status = Mock()
             return response
 
         self.jarr_con.return_value = {}
         self.jarr_req.side_effect = _api_req
-        conf.crawler.login = 'admin'
-        conf.crawler.passwd = 'admin'
 
     def tearDown(self):
         self._is_secure_served.stop()
@@ -95,7 +88,7 @@ class CrawlerTest(JarrFlaskCommon):
 
         crawler()
         articles = list(ArticleController().read())
-        self.assertEqual(BASE_COUNT + self.new_entries_cnt, len(articles))
+        self.assertNotEqual(BASE_COUNT, len(articles))
 
         for art in articles:
             self.assertFalse('srcset=' in art.content)
