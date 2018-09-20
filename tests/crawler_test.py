@@ -7,6 +7,7 @@ from mock import Mock, patch
 from tests.base import JarrFlaskCommon
 
 from jarr.bootstrap import conf
+from jarr.models.feed import Feed
 from jarr.controllers import (ArticleController, FeedController,
         UserController, ClusterController)
 from jarr.crawler.main import (clusterizer, process_feed,
@@ -157,7 +158,9 @@ class CrawlerMethodsTest(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
-        self.feed = FeedController().get(id=1)
+        self.feed = Feed(user_id=1, id=1, title='title',
+                description='description', etag='', error_count=5,
+                link='link')
         self.resp = Mock(text='text', headers={}, status_code=304, history=[])
 
     def test_etag_matching_w_constructed_etag(self):
