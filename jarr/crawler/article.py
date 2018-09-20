@@ -68,7 +68,6 @@ def construct_article(entry, feed, user_agent,
         if 'content' in article and details.get('link'):
             push_in_article('content',
                             clean_urls, article['content'], details['link'])
-    push_in_article('valuable_tokens', extract_valuable_tokens, article)
     return article
 
 
