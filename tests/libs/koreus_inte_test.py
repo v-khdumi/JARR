@@ -33,7 +33,7 @@ class KoreusIntegrationTest(unittest.TestCase):
     comments = 'https://www.koreus.com/modules/news/article24051.html'
 
     def test_no_match(self):
-        feed = Feed()
+        feed = Feed(link='a link')
         entry = {}
         entry_parsing.send('test', feed=feed, entry=entry)
         self.assertEqual(entry, {})
