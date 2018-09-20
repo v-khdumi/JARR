@@ -207,11 +207,11 @@ class CrawlerMethodsTest(unittest.TestCase):
     @patch('jarr.crawler.main.FeedController.update')
     def test_set_feed_error_w_parsed(self, fctrl_update):
         original_error_count = self.feed.error_count
+        set_feed_error(self.feed,
+                       parsed_feed={'bozo_exception': 'an error'})
 
         fctrl_update.assert_called_once()
         filters, data = fctrl_update.mock_calls[0][1]
-        set_feed_error(self.feed,
-                       parsed_feed={'bozo_exception': 'an error'})
         self.assertEqual(filters['id'], self.feed.id)
         self.assertEqual(original_error_count + 1, data['error_count'])
         self.assertEqual('an error', data['last_error'])
