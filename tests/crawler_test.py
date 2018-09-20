@@ -7,7 +7,8 @@ from mock import Mock, patch
 from tests.base import JarrFlaskCommon
 
 from jarr.bootstrap import conf
-from jarr.controllers import FeedController, UserController, ClusterController
+from jarr.controllers import (ArticleController, FeedController,
+        UserController, ClusterController)
 from jarr.crawler.main import (clusterizer, process_feed,
         response_etag_match, response_calculated_etag_match,
         set_feed_error, clean_feed)
@@ -35,7 +36,7 @@ class CrawlerTest(JarrFlaskCommon):
         UserController().update({'login': 'admin'}, {'is_api': True})
         self._is_secure_served \
                 = patch('jarr.lib.article_cleaner.is_secure_served')
-        self._p_req = patch('jarr.crawler.requests_utils.requests.api.request')
+        self._p_req = patch('jarr.lib.utils.jarr_get')
         self._p_con = patch('jarr.crawler.main.construct_feed_from')
         self.is_secure_served = self._is_secure_served.start()
         self.jarr_req = self._p_req.start()
@@ -90,40 +91,31 @@ class CrawlerTest(JarrFlaskCommon):
 
     def test_http_crawler_add_articles(self):
         ClusterController.clusterize_pending_articles()
-        resp = self._api('get', 'articles', data={'limit': 1000}, user='admin')
-        self.assertEqual(BASE_COUNT, len(resp.json()))
+        self.assertEqual(BASE_COUNT, ArticleController().read().count())
 
         crawler()
-        ClusterController.clusterize_pending_articles()
-        resp = self._api('get', 'articles', data={'limit': 1000}, user='admin')
-        self.assertEqual(BASE_COUNT + self.new_entries_cnt, len(resp.json()))
+        articles = list(ArticleController().read().count())
+        self.assertEqual(BASE_COUNT + self.new_entries_cnt, len(articles))
 
-        for art in resp.json():
-            self.assertFalse('srcset=' in art['content'])
-            self.assertFalse('src="/' in art['content'])
+        for art in articles:
+            self.assertFalse('srcset=' in art.content)
+            self.assertFalse('src="/' in art.content)
 
         self.resp_status_code = 304
         crawler()
-        ClusterController.clusterize_pending_articles()
-        resp = self._api('get', 'articles', data={'limit': 1000}, user='admin')
-        self.assertEqual(BASE_COUNT + self.new_entries_cnt, len(resp.json()))
+        self.assertEqual(BASE_COUNT + self.new_entries_cnt,
+                ArticleController().read().count())
 
     def test_no_add_on_304(self):
         self.resp_status_code = 304
-        ClusterController.clusterize_pending_articles()
-        resp = self._api('get', 'articles', data={'limit': 1000}, user='admin')
-        self.assertEqual(BASE_COUNT, len(resp.json()))
-
+        self.assertEqual(BASE_COUNT, ArticleController().read().count())
         crawler()
-        ClusterController.clusterize_pending_articles()
-        resp = self._api('get', 'articles', data={'limit': 1000}, user='admin')
-        self.assertEqual(BASE_COUNT, len(resp.json()))
+        self.assertEqual(BASE_COUNT, ArticleController().read().count())
 
     def test_no_add_feed_skip(self):
         self.resp_status_code = 304
-        ClusterController.clusterize_pending_articles()
-        resp = self._api('get', 'articles', data={'limit': 1000}, user='admin')
-        self.assertEqual(BASE_COUNT, len(resp.json()))
+        self.assertEqual(BASE_COUNT, ArticleController().read().count())
+        crawler()
         FeedController().update({}, {'filters': [{"type": "tag contains",
                                                   "action on": "match",
                                                   "pattern": "pattern5",
@@ -138,37 +130,27 @@ class CrawlerTest(JarrFlaskCommon):
                                                   "action": "skipped"}]})
 
         crawler()
-        ClusterController.clusterize_pending_articles()
-        resp = self._api('get', 'articles', data={'limit': 1000}, user='admin')
-        self.assertEqual(BASE_COUNT, len(resp.json()))
+        self.assertEqual(BASE_COUNT, ArticleController().read().count())
 
     def test_matching_etag(self):
         self._reset_feeds_freshness(etag='fake etag')
         self.resp_headers = {'etag': 'fake etag'}
-        ClusterController.clusterize_pending_articles()
-        resp = self._api('get', 'articles', data={'limit': 1000}, user='admin')
-        self.assertEqual(BASE_COUNT, len(resp.json()))
+        self.assertEqual(BASE_COUNT, ArticleController().read().count())
 
         crawler()
-        ClusterController.clusterize_pending_articles()
-        resp = self._api('get', 'articles', data={'limit': 1000}, user='admin')
-        self.assertEqual(BASE_COUNT, len(resp.json()))
 
+        self.assertEqual(BASE_COUNT, ArticleController().read().count())
         self._reset_feeds_freshness(etag='jarr/"%s"' % to_hash(self._content))
         self.resp_headers = {'etag': 'jarr/"%s"' % to_hash(self._content)}
 
         crawler()
-        ClusterController.clusterize_pending_articles()
-        resp = self._api('get', 'articles', data={'limit': 1000}, user='admin')
-        self.assertEqual(BASE_COUNT, len(resp.json()))
+        self.assertEqual(BASE_COUNT, ArticleController().read().count())
 
         self._reset_feeds_freshness(etag='jarr/fake etag')
         self.resp_headers = {'etag': '########################'}
 
         crawler()
-        ClusterController.clusterize_pending_articles()
-        resp = self._api('get', 'articles', data={'limit': 1000}, user='admin')
-        self.assertEqual(BASE_COUNT + self.new_entries_cnt, len(resp.json()))
+        self.assertEqual(BASE_COUNT, ArticleController().read().count())
 
 
 class CrawlerMethodsTest(unittest.TestCase):
