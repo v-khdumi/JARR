@@ -21,17 +21,17 @@ map_of_irish_clans_in_times_of_henry_viii_1294/">[comments]</a></span>
 class RedditIntegrationTest(unittest.TestCase):
 
     def test_feed_creation(self):
-        feed = Feed(link='http://www.reddit.com/r/france/.rss')
+        feed = {'link': 'http://www.reddit.com/r/france/.rss'}
         feed_creation.send('test', feed=feed)
-        self.assertTrue(feed.integration_reddit)
+        self.assertTrue(feed['integration_reddit'])
 
     def test_feed_creation_https(self):
-        feed = Feed(link='https://www.reddit.com/r/france/.rss')
+        feed = {'link': 'https://www.reddit.com/r/france/.rss'}
         feed_creation.send('test', feed=feed)
-        self.assertTrue(feed.integration_reddit)
+        self.assertTrue(feed['integration_reddit'])
 
     def test_match_light_parsing_nok(self):
-        feed = Feed(integration_reddit=True)
+        feed = Feed(integration_reddit=True, link='')
         tags = [{'scheme': None, 'term': 'to', 'label': ''},
                 {'scheme': None, 'term': 'be', 'label': ''},
                 {'scheme': None, 'term': 'removed', 'label': ''}]
