@@ -38,7 +38,7 @@ class KoreusIntegrationTest(unittest.TestCase):
         entry_parsing.send('test', feed=feed, entry=entry)
         self.assertEqual(entry, {})
 
-        feed = {'link': 'https://feeds.feedburner.com/Koreus-articles'}
+        feed = Feed(link='https://feeds.feedburner.com/Koreus-articles')
         entry_parsing.send('test', feed=feed, entry=entry)
         self.assertEqual(entry, {})
 
