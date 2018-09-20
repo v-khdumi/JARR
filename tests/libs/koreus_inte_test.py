@@ -1,5 +1,6 @@
 import unittest
 from jarr.crawler.signals import entry_parsing
+from jarr.models.feed import Feed
 
 CONTENT = """<a href="https://www.koreus.com/video/molly-cavailli-mordu-requin\
 .html"><img align="left" alt="vidéo requin citron cage actrice porno femme \
@@ -32,7 +33,7 @@ class KoreusIntegrationTest(unittest.TestCase):
     comments = 'https://www.koreus.com/modules/news/article24051.html'
 
     def test_no_match(self):
-        feed = {}
+        feed = Feed()
         entry = {}
         entry_parsing.send('test', feed=feed, entry=entry)
         self.assertEqual(entry, {})
@@ -42,7 +43,7 @@ class KoreusIntegrationTest(unittest.TestCase):
         self.assertEqual(entry, {})
 
     def test_entry_parsing(self):
-        feed = {'link': 'https://feeds.feedburner.com/Koreus-articles'}
+        feed = Feed(link='https://feeds.feedburner.com/Koreus-articles')
         entry = {'summary_detail': {'value': CONTENT}, 'link': self.comments}
         entry_parsing.send('test', feed=feed, entry=entry)
         self.assertEqual(entry['link'], self.link)
