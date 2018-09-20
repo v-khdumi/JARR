@@ -91,11 +91,10 @@ class CrawlerTest(JarrFlaskCommon):
         FeedController().update({}, kwargs)
 
     def test_http_crawler_add_articles(self):
-        ClusterController.clusterize_pending_articles()
         self.assertEqual(BASE_COUNT, ArticleController().read().count())
 
         crawler()
-        articles = list(ArticleController().read().count())
+        articles = list(ArticleController().read())
         self.assertEqual(BASE_COUNT + self.new_entries_cnt, len(articles))
 
         for art in articles:
