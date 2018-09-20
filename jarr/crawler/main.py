@@ -107,7 +107,7 @@ def create_missing_article(feed, response, **kwargs):
                 resolv=conf.crawler.resolv)
         logger.info('creating %r for %r - %r', new_article.get('title'),
                     new_article.get('user_id'), id_to_create)
-        actrl.create(new_article)
+        actrl.create(**new_article)
 
     if not article_created:
         logger.info('all article matched in db, adding nothing')
