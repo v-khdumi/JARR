@@ -91,7 +91,7 @@ class FeedController(AbstractController):
         from jarr.signals import feed_creation
         self._ensure_icon(attrs)
         self.__clean_feed_fields(attrs)
-        feed_creation.send(self, attrs)
+        feed_creation.send(self, feed=attrs)
         return super().create(**attrs)
 
     def __denorm_cat_id_on_articles(self, feed, attrs):
