@@ -144,7 +144,7 @@ class CrawlerTest(JarrFlaskCommon):
         self.resp_headers = {'etag': '########################'}
 
         crawler()
-        self.assertEqual(BASE_COUNT, ArticleController().read().count())
+        self.assertNotEqual(BASE_COUNT, ArticleController().read().count())
 
 
 class CrawlerMethodsTest(unittest.TestCase):
