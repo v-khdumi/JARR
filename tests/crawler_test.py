@@ -19,7 +19,7 @@ BASE_COUNT = 36
 
 
 def crawler():
-    for feed in FeedController().list_fetchable():
+    for feed in FeedController().list_fetchable(limit=1):
         process_feed.apply(args=[feed.id])
     clusterizer.apply()
 
