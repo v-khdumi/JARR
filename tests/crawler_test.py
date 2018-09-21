@@ -88,7 +88,9 @@ class CrawlerTest(JarrFlaskCommon):
 
         crawler()
         articles = list(ArticleController().read())
-        self.assertNotEqual(BASE_COUNT, len(articles))
+        new_count = len(articles)
+        self.assertNotEqual(BASE_COUNT, new_count)
+        self.assertTrue(BASE_COUNT < new_count)
 
         for art in articles:
             self.assertFalse('srcset=' in art.content)
@@ -96,8 +98,7 @@ class CrawlerTest(JarrFlaskCommon):
 
         self.resp_status_code = 304
         crawler()
-        self.assertEqual(BASE_COUNT + self.new_entries_cnt,
-                ArticleController().read().count())
+        self.assertEqual(new_count, ArticleController().read().count())
 
     def test_no_add_on_304(self):
         self.resp_status_code = 304
