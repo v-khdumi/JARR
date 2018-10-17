@@ -1,6 +1,5 @@
 import unittest
-from jarr.signals import feed_creation
-from jarr.crawler.signals import entry_parsing
+from jarr.signals import feed_creation, entry_parsing
 from jarr.models.feed import Feed
 
 CONTENT = """<table><tr><td>

@@ -7,7 +7,7 @@ from jarr.lib import reasons
 from jarr.lib.feed_utils import construct_feed_from, is_parsing_ok
 from jarr.lib.utils import jarr_get, utc_now
 from jarr.bootstrap import conf
-from jarr.crawler.signals import entry_parsing
+from jarr.signals import entry_parsing
 from jarr.crawler.requests_utils import (response_etag_match,
         response_calculated_etag_match)
 from jarr.crawler.lib.headers_handling import (prepare_headers,
@@ -133,21 +133,17 @@ def process_feed(feed_id):
         logger.info('feed responded with 304')
         clean_feed(feed, resp,
                    cache_type=reasons.CacheReason.status_code_304)
-        return
     elif resp.status_code == 226:
         logger.info('feed responded with 226')
         kwargs['cache_support_a_im'] = True
     elif response_etag_match(feed, resp):
         clean_feed(feed, resp, cache_type=reasons.CacheReason.etag)
-        return
     elif response_calculated_etag_match(feed, resp):
         clean_feed(feed, resp, cache_type=reasons.CacheReason.etag_calculated)
-        return
     else:
         logger.debug('etag mismatch %r != %r',
                      resp.headers.get('etag'), feed.etag)
-
-    create_missing_article(feed, resp, **kwargs)
+        create_missing_article(feed, resp, **kwargs)
 
 
 @celery_app.task(name='crawler.clusterizer')

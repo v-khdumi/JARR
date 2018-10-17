@@ -1,5 +1,5 @@
 import unittest
-from jarr.crawler.signals import entry_parsing
+from jarr.signals import entry_parsing
 from jarr.models.feed import Feed
 
 CONTENT = """<a href="https://www.koreus.com/video/molly-cavailli-mordu-requin\
