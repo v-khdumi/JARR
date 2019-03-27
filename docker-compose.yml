@@ -1,6 +1,6 @@
 version: '3'
 services:
-  server:
+  jarr-server:
     build:
       dockerfile: containers/server/Dockerfile
       context: .
@@ -12,6 +12,7 @@ services:
     depends_on:
       - redis
       - postgresql
+      - rabbitmq
   crawler:
     build:
       dockerfile: containers/crawler/Dockerfile
@@ -19,34 +20,19 @@ services:
     networks:
       - backend
     depends_on:
-      - redis
-      - postgresql
+      - jarr-server
   redis:
-    image: redis:alpine
+    image: redis
     ports:
-      - "6379"
-    networks:
-      - backend
-    deploy:
-      replicas: 2
-      update_config:
-        parallelism: 2
-        delay: 10s
-      restart_policy:
-        condition: on-failure
+      - 6379
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "25672"
+      - "4369"
+      - "5671"
+      - "5672"
   postgresql:
-    image: postgres:9.4
+    image: postgres:11
     volumes:
-      - db-data:/var/lib/postgresql/data
-    networks:
-      - backend
-    deploy:
-      placement:
-        constraints: [node.role == manager]
-
-networks:
-  frontend:
-  backend:
-
-volumes:
-  db-data:
+      - ./jarr-data:/var/lib/postgresql/data

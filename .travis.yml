@@ -22,20 +22,16 @@ addons:
       - libpq-dev
 
 install:
-  - pip install --upgrade pip
-  - pip install --upgrade pipenv
-  - pipenv install --system --dev
+  - make install-dev
 #  - npm install
 #  - npm run build
 
 before_script:
-  - psql -c 'CREATE DATABASE jarr_test;' -U postgres
-  - echo '{"jarr_testing":true,"log":{"level":10},"db":{"pg_uri":"postgresql:///jarr_test"}}' > ~/.config/jarr.test.json
+  - make bootstrap-db
 
 script:
-  - CONFIG_FILE=~/.config/jarr.test.json pipenv run nosetests tests/ -v --with-coverage --cover-package=jarr
-  # ignoring aligning / line breaking non-sens
-  - pycodestyle --ignore=E126,E127,E128,W503 jarr/ --exclude=jarr/migrations
+  - make lint
+  - make test
 
 after_success:
   - coveralls
