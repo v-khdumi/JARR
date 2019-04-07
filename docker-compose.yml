@@ -36,3 +36,7 @@ services:
     image: postgres:11
     volumes:
       - ./jarr-data:/var/lib/postgresql/data
+
+networks:
+  frontend:
+  backend:
