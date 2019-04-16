@@ -7,7 +7,7 @@ install:
 	pipenv install --system
 
 lint:
-	pycodestyle --ignore=E126,E127,E128,W503 jarr/ --exclude=jarr/migrations
+	pipenv run pycodestyle --ignore=E126,E127,E128,W503 jarr/ --exclude=jarr/migrations
 
 bootstrap-db:
 	psql -c 'CREATE DATABASE jarr_test;' -U postgres

@@ -36,11 +36,10 @@ class ConstructFeedFromTest(unittest.TestCase):
         self.maxDiff = None
         joi = construct_feed_from('https://lesjoiesducode.fr/feed', **cff_kw)
         self.assertEqual(
-                {'description': "L'instant gif des développeurs !",
-                 'icon_url': 'https://ljdchost.com/theme/favicons/favicon.ico',
+                {'icon_url': 'https://ljdchost.com/theme/favicons/favicon.ico',
                  'link': 'https://lesjoiesducode.fr/feed',
                  'site_link': 'https://lesjoiesducode.fr',
-                 'title': 'Les joies du code'}, joi)
+                 'title': 'Les joies du code 🖥️🤦\u200d♂️'}, joi)
 
     def test_apod(self):
         nasa = construct_feed_from('http://apod.nasa.gov/', **cff_kw)
