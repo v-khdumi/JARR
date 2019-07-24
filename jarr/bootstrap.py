@@ -13,8 +13,11 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 
 from the_conf import TheConf
 
-conf = TheConf({'config_files': ['/etc/jarr.json', '~/.config/jarr.json'],
-        'source_order': ['env', 'cmd', 'files'],
+
+DEFAULT_UI_PORT = 8000
+
+conf = TheConf({'config_files': ['/etc/jarr/jarr.json', '~/.config/jarr.json'],
+        'source_order': ['env', 'files'],
         'parameters': [
             {'jarr_testing': {'default': False, 'type': bool}},
             {'cluster_default': [
@@ -23,7 +26,7 @@ conf = TheConf({'config_files': ['/etc/jarr.json', '~/.config/jarr.json'],
                 {'tfidf_min_sample_size': {'default': 10, 'type': int}},
                 {'tfidf_min_score': {'default': .75, 'type': float}}]},
             {'timezone': {'default': 'Europe/Paris', 'type': str}},
-            {'platform_url': {'default': 'http://0.0.0.0:5000/'}},
+            {'platform_url': {'default': 'http://0.0.0.0:%d/' % DEFAULT_UI_PORT}},
             {'db': [{'pg_uri': {'default': 'postgresql://postgresql/jarr'}},
                     {'redis': [{'host': {'default': 'redis'}},
                                {'db': {'default': 0, 'type': int}},
@@ -75,7 +78,7 @@ conf = TheConf({'config_files': ['/etc/jarr.json', '~/.config/jarr.json'],
                       {'max_expires': {'type': int, 'default': 60 * 60 * 4}},
                       {'stop_fetch': {'default': 30, 'type': int}}]},
             {'webserver': [{'host': {'default': '0.0.0.0'}},
-                           {'port': {'default': 5000, 'type': int}}]},
+                           {'port': {'default': DEFAULT_UI_PORT, 'type': int}}]},
                       ]})
 
 # utilities

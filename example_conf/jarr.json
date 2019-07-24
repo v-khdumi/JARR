@@ -1,0 +1,1 @@
+{"jarr_testing":false,"crawler":{"login":"admin","passwd":"admin"},"log":{"level":10},"sqlalchemy":{"db_uri": "postgresql:///jarr", "test_uri":"postgresql:///jarr_test"}}
