@@ -1,10 +1,8 @@
 install-dev:
-	pip install --upgrade pip pipenv
-	pipenv install --system --dev
+	pipenv sync --dev
 
 install:
-	pip install --upgrade pip pipenv
-	pipenv install --system
+	pipenv sync
 
 lint:
 	pipenv run pycodestyle --ignore=E126,E127,E128,W503 jarr/ --exclude=jarr/migrations
