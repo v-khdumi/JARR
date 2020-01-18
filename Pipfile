@@ -13,6 +13,7 @@ Flask-Testing = "*"
 ipdb = "*"
 ipython = "*"
 pylint = "*"
+docker-compose = "*"
 
 [packages]
 alembic = "==0.9.6"
